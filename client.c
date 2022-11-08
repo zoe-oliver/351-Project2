@@ -23,6 +23,9 @@ main(int argc, char **argv)
   exit(1);
  }
 	
+//connect to server to socket, print messages received
+
+
  //Create a socket for the client
  //If sockfd<0 there was an error in the creation of the socket
  if ((sockfd = socket (AF_INET, SOCK_STREAM, 0)) <0) {
@@ -43,16 +46,21 @@ main(int argc, char **argv)
  }
 	
  while (fgets(sendline, MAXLINE, stdin) != NULL) {
-	
+    printf("%s", "Enter a Message: \n");
+    puts(sendline);
   send(sockfd, sendline, strlen(sendline), 0);
+  
 		
   if (recv(sockfd, recvline, MAXLINE,0) == 0){
    //error: server terminated prematurely
    perror("The server terminated prematurely"); 
    exit(4);
   }
+  
   printf("%s", "String received from the server: ");
+  //recv(sockfd, recvline, MAXLINE,0);
   fputs(recvline, stdout);
+  
  }
 
  exit(0);

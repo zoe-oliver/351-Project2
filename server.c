@@ -20,12 +20,68 @@ int main (int argc, char **argv)
 
  int fd[2];
  pipe(fd);
+ 
+  char server_input[100];
+
+  //int id = fork();
+
+  //If sockfd<0 there was an error in the creation of the socket
+ if ((listenfd = socket (AF_INET, SOCK_STREAM, 0)) <0) {
+  perror("Problem in creating the socket");
+  exit(2);
+ }
+
+  //preparation of the socket address
+ servaddr.sin_family = AF_INET;
+ servaddr.sin_addr.s_addr = htonl(INADDR_ANY);
+ servaddr.sin_port = htons(SERV_PORT);
+
+//  //bind the socket
+  if((bind(listenfd, (struct sockaddr *) &servaddr, sizeof(servaddr))) < 0){
+    printf("Error in binding. \n");
+    exit(1);
+  }
+
+
+//  //listen to the socket by creating a connection queue, then wait for clients
+  listen(listenfd, LISTENQ);
+
+  printf("%s\n","Server running...waiting for connections.");
+
+//  for ( ; ; ) {
+
+  clilen = sizeof(cliaddr);
+  //accept a connection
+  connfd = accept(listenfd, (struct sockaddr *) &cliaddr, &clilen);
+
+  printf("%s\n","Received request...");
+
+
+
+  //read  user input
+  
+
 
  int id = fork();
 
-  /*check if it is a parent or a child */
+ printf("Enter a Message:");
+  scanf(" %s", server_input);
 
+//add in code below to make this work for reading from the buffer
+
+//checks if it is a parent or child process
  if(id == 0){
+    printf ("%s\n","Child created for dealing with client requests");
+
+    //close listening socket
+    close (listenfd);
+
+    while ( (n = recv(connfd, buf, MAXLINE,0)) > 0)  {
+      printf("%s","String received from and resent to the client:");
+      puts(buf);
+      send(connfd, buf, n, 0);
+    }
+
     //child reading from pipe
     close(fd[1]);
     char concat_str[100];
@@ -34,8 +90,8 @@ int main (int argc, char **argv)
 
     int k = strlen(concat_str);
     int i;
-    for (i = 0; i < strlen(fixed_str); i++) {
-      concat_str[k++] = fixed_str[i];
+    for (i = 0; i < strlen(server_input); i++) {
+      concat_str[k++] = server_input[i];
     }
     //concat_str[k] = '\0';
 
@@ -43,11 +99,16 @@ int main (int argc, char **argv)
     close(fd[1]);
 
     //child writing to pipe
-    write(fd[1], concat_str, strlen(concat_str) + 1); //check for error buf + 1, might be wrong length
+    write(fd[1], server_input, strlen(server_input) + 1); //check for error buf + 1, might be wrong length
     close(fd[1]);
+
+    //close socket of the server
+    close(connfd);
+
  } else {
+
     //writing to pipe
-    char concat_str[100];
+  char concat_str[100];
     close(fd[0]);
 
     write(fd[1], buf, strlen(buf) + 1); //check for error buf + 1, might be wrong length
@@ -55,8 +116,8 @@ int main (int argc, char **argv)
     wait(NULL);
     close(fd[1]);
 
-    read(fd[1], concat_str, 100);
-    printf("Concatenated string %s\n", concat_str);
+    read(fd[1], server_input, 100);
+    printf("Concatenated string %s\n", server_input);
     close(fd[0]);
  }
 
